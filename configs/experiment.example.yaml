@@ -2,11 +2,11 @@ experiment_name: enumop_pilot
 provider: openai
 model: gpt-5.5
 seed: 42
-temperature: 0
-top_p: 1
+temperature: null
+top_p: null
 max_output_tokens: 1800
 prompt_file: prompts/prompt_bank.jsonl
-output_file: data/raw/openai_outputs.jsonl
+output_file: data/raw/openai_outputs_gpt-5.5.jsonl
 system_prompt: |
   You are a writing assistant. Follow the user request exactly.
 conditions:
