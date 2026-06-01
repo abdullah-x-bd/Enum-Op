@@ -43,6 +43,9 @@ The substitution score is the most important early metric. It measures cases whe
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       └── run-openai-pilot.yml
 ├── configs/
 │   └── experiment.example.yaml
 ├── data/
@@ -60,12 +63,48 @@ The substitution score is the most important early metric. It measures cases whe
 │   └── enumop/
 │       ├── __init__.py
 │       └── metrics.py
-├── .gitignore
 ├── README.md
 └── requirements.txt
 ```
 
-## Quick start
+## GitHub Actions run
+
+The first pilot can be run from GitHub Actions after adding the OpenAI key as a repository secret.
+
+Add the secret in GitHub:
+
+Settings > Secrets and variables > Actions > New repository secret
+
+Use this exact name:
+
+```text
+OPENAI_API_KEY
+```
+
+Then run the workflow:
+
+Actions > Run OpenAI pilot > Run workflow
+
+The workflow has two inputs.
+
+- `limit`, which controls how many prompts are run. The default is 3.
+- `model`, which controls the OpenAI model. The default is `gpt-5.4-nano`.
+
+The workflow saves the raw model outputs to:
+
+```text
+data/raw/openai_outputs.jsonl
+```
+
+It saves the metrics table to:
+
+```text
+results/metrics_summary.csv
+```
+
+Both files are committed back into the repo by the workflow.
+
+## Local run
 
 Install the Python dependencies.
 
