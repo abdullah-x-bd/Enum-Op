@@ -54,6 +54,7 @@ jobs:
           PY
 
       - name: Run experiment
+        continue-on-error: true
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -64,23 +65,30 @@ jobs:
             python scripts/run_openai_experiment.py --config configs/experiment.github.yaml --limit "$LIMIT"
           fi
 
-      - name: Analyze results
+      - name: Analyze results if present
+        if: always()
         run: |
           MODEL="${{ github.event.inputs.model }}"
           if [ -z "$MODEL" ]; then MODEL="gpt-5.5"; fi
           MODEL_SLUG=$(echo "$MODEL" | sed 's#[/:]#-#g')
-          python scripts/analyze_results.py \
-            --input "data/raw/openai_outputs_${MODEL_SLUG}.jsonl" \
-            --output "results/metrics_summary_${MODEL_SLUG}.csv" \
-            --summary-output "results/condition_summary_${MODEL_SLUG}.csv"
+          OUTPUT_FILE="data/raw/openai_outputs_${MODEL_SLUG}.jsonl"
+          if [ -s "$OUTPUT_FILE" ]; then
+            python scripts/analyze_results.py \
+              --input "$OUTPUT_FILE" \
+              --output "results/metrics_summary_${MODEL_SLUG}.csv" \
+              --summary-output "results/condition_summary_${MODEL_SLUG}.csv"
+          else
+            echo "No output file found for ${MODEL}; skipping analysis."
+          fi
 
-      - name: Commit results
+      - name: Commit available results
+        if: always()
         run: |
           MODEL="${{ github.event.inputs.model }}"
           if [ -z "$MODEL" ]; then MODEL="gpt-5.5"; fi
           MODEL_SLUG=$(echo "$MODEL" | sed 's#[/:]#-#g')
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "data/raw/openai_outputs_${MODEL_SLUG}.jsonl" "results/metrics_summary_${MODEL_SLUG}.csv" "results/condition_summary_${MODEL_SLUG}.csv"
+          git add "data/raw/openai_outputs_${MODEL_SLUG}.jsonl" "results/metrics_summary_${MODEL_SLUG}.csv" "results/condition_summary_${MODEL_SLUG}.csv" || true
           git commit -m "Add OpenAI pilot results for ${MODEL}" || echo "No changes to commit"
           git push
