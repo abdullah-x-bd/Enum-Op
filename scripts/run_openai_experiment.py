@@ -23,6 +23,26 @@ def build_user_prompt(base_prompt: str, condition_instruction: str) -> str:
     return f"{base_prompt}\n\nStyle instruction:\n{condition_instruction.strip()}"
 
 
+def build_response_kwargs(config: dict, model: str, user_prompt: str) -> dict:
+    kwargs = {
+        "model": model,
+        "input": [
+            {"role": "system", "content": config.get("system_prompt", "")},
+            {"role": "user", "content": user_prompt},
+        ],
+        "max_output_tokens": config.get("max_output_tokens", 1800),
+    }
+
+    # Some current OpenAI models do not support sampling controls such as
+    # temperature or top_p. Set these config values to null to omit them.
+    if config.get("temperature") is not None:
+        kwargs["temperature"] = config.get("temperature")
+    if config.get("top_p") is not None:
+        kwargs["top_p"] = config.get("top_p")
+
+    return kwargs
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
@@ -54,14 +74,7 @@ def main():
                 )
 
                 response = client.responses.create(
-                    model=model,
-                    input=[
-                        {"role": "system", "content": config.get("system_prompt", "")},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    temperature=config.get("temperature", 0),
-                    top_p=config.get("top_p", 1),
-                    max_output_tokens=config.get("max_output_tokens", 1800),
+                    **build_response_kwargs(config, model, user_prompt)
                 )
 
                 record = {
@@ -69,8 +82,8 @@ def main():
                     "experiment_name": config.get("experiment_name"),
                     "provider": config.get("provider", "openai"),
                     "model": model,
-                    "temperature": config.get("temperature", 0),
-                    "top_p": config.get("top_p", 1),
+                    "temperature": config.get("temperature"),
+                    "top_p": config.get("top_p"),
                     "prompt_id": prompt_record["prompt_id"],
                     "genre": prompt_record.get("genre"),
                     "condition": condition_name,
