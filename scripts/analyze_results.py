@@ -24,6 +24,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--summary-output", default=None)
     args = parser.parse_args()
 
     rows = []
@@ -47,6 +48,10 @@ def main():
     if not df.empty:
         summary = df.groupby("condition").mean(numeric_only=True).round(4)
         print(summary)
+        if args.summary_output:
+            summary_output_path = Path(args.summary_output)
+            summary_output_path.parent.mkdir(parents=True, exist_ok=True)
+            summary.to_csv(summary_output_path)
 
 
 if __name__ == "__main__":
