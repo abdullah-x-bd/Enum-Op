@@ -1,6 +1,6 @@
 experiment_name: enumop_pilot
 provider: openai
-model: gpt-5.4-nano
+model: gpt-5.5
 seed: 42
 temperature: 0
 top_p: 1
