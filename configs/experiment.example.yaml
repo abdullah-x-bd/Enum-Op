@@ -1,0 +1,20 @@
+experiment_name: enumop_pilot
+provider: openai
+model: gpt-4.1
+seed: 42
+temperature: 0
+top_p: 1
+max_output_tokens: 1800
+prompt_file: prompts/prompt_bank.jsonl
+output_file: data/raw/openai_outputs.jsonl
+system_prompt: |
+  You are a writing assistant. Follow the user request exactly.
+conditions:
+  control:
+    instruction: ""
+  anti_list:
+    instruction: |
+      Write only in paragraphs. Do not use bullet points, numbered lists, headings, or any list-like formatting. Avoid long list-like sentences.
+  strong_anti_list:
+    instruction: |
+      Write only in paragraphs. Do not use bullet points, numbered lists, headings, list-like formatting, long comma chains, stacked examples, repeated category clusters, or inventory-style paragraphs. Each paragraph should develop one idea instead of packing many items together.
