@@ -37,7 +37,6 @@ jobs:
         run: |
           cp configs/experiment.example.yaml configs/experiment.github.yaml
           python - <<'PY'
-          import os
           from pathlib import Path
           import yaml
 
@@ -46,7 +45,11 @@ jobs:
           model = "${{ github.event.inputs.model }}".strip()
           if model:
               config["model"] = model
-          config["output_file"] = "data/raw/openai_outputs.jsonl"
+          model_slug = config["model"].replace("/", "-").replace(":", "-")
+          config["output_file"] = f"data/raw/openai_outputs_{model_slug}.jsonl"
+          if config["model"].startswith("gpt-5.5"):
+              config["temperature"] = None
+              config["top_p"] = None
           path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
           PY
 
@@ -63,15 +66,21 @@ jobs:
 
       - name: Analyze results
         run: |
+          MODEL="${{ github.event.inputs.model }}"
+          if [ -z "$MODEL" ]; then MODEL="gpt-5.5"; fi
+          MODEL_SLUG=$(echo "$MODEL" | sed 's#[/:]#-#g')
           python scripts/analyze_results.py \
-            --input data/raw/openai_outputs.jsonl \
-            --output results/metrics_summary.csv \
-            --summary-output results/condition_summary.csv
+            --input "data/raw/openai_outputs_${MODEL_SLUG}.jsonl" \
+            --output "results/metrics_summary_${MODEL_SLUG}.csv" \
+            --summary-output "results/condition_summary_${MODEL_SLUG}.csv"
 
       - name: Commit results
         run: |
+          MODEL="${{ github.event.inputs.model }}"
+          if [ -z "$MODEL" ]; then MODEL="gpt-5.5"; fi
+          MODEL_SLUG=$(echo "$MODEL" | sed 's#[/:]#-#g')
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/raw/openai_outputs.jsonl results/metrics_summary.csv results/condition_summary.csv
-          git commit -m "Add OpenAI pilot results" || echo "No changes to commit"
+          git add "data/raw/openai_outputs_${MODEL_SLUG}.jsonl" "results/metrics_summary_${MODEL_SLUG}.csv" "results/condition_summary_${MODEL_SLUG}.csv"
+          git commit -m "Add OpenAI pilot results for ${MODEL}" || echo "No changes to commit"
           git push
